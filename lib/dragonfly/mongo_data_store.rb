@@ -9,73 +9,65 @@ module Dragonfly
     include Serializer
 
     def initialize(opts={})
-      @host            = opts[:host]
+      @host            = opts[:host] || 'localhost'
+      @port            = opts[:port] || 27017
       @hosts           = opts[:hosts]
       @connection_opts = opts[:connection_opts] || {}
-      @port            = opts[:port]
       @database        = opts[:database] || 'dragonfly'
       @username        = opts[:username]
       @password        = opts[:password]
-      @connection      = opts[:connection]
-      @db              = opts[:db]
+      @client          = opts[:client]
     end
 
     attr_accessor :host, :hosts, :connection_opts, :port, :database, :username, :password
 
     def write(content, opts={})
-      ensure_authenticated!
       content.file do |f|
-        mongo_id = grid.put(f, :content_type => content.mime_type, :metadata => content.meta)
+        grid_file = Mongo::Grid::File.new(f.read, filename: content.name, content_type: content.mime_type, metadata: content.meta)
+        mongo_id = client.database.fs.insert_one(grid_file)
         mongo_id.to_s
       end
     end
 
     def read(uid)
-      ensure_authenticated!
-      grid_io = grid.get(bson_id(uid))
-      meta = extract_meta(grid_io)
-      [grid_io.read, meta]
-    rescue Mongo::GridFileNotFound, BSON::InvalidObjectId => e
+      grid_io = client.database.fs.find_one(_id: bson_id(uid))
+      unless grid_io.nil?
+        meta = extract_meta(grid_io)
+        [grid_io.data, meta]
+      end
+    rescue BSON::ObjectId::Invalid => e
       nil
     end
 
     def destroy(uid)
-      ensure_authenticated!
-      grid.delete(bson_id(uid))
-    rescue Mongo::GridFileNotFound, BSON::InvalidObjectId => e
+      file = client.database.fs.find_one(_id: bson_id(uid))
+      client.database.fs.delete_one(file) unless file.nil?
+    rescue BSON::ObjectId::Invalid => e
       Dragonfly.warn("#{self.class.name} destroy error: #{e}")
     end
 
-    def connection
-      @connection ||= if hosts
-        Mongo::ReplSetConnection.new(hosts, connection_opts)
-      else
-        Mongo::Connection.new(host, port, connection_opts)
-      end
+    def client
+      default_options = {
+        database: @database
+      }
+      default_options[:user] = username if username
+      default_options[:password] = password if password
+      @hosts ||= ["#{host}:#{port}"]
+      @client ||= Mongo::Client.new(hosts, default_options.merge(connection_opts))
     end
 
-    def db
-      @db ||= connection.db(database)
-    end
-
-    def grid
-      @grid ||= Mongo::Grid.new(db)
+    def gridfs
+      client.database.fs
     end
 
     private
-
-    def ensure_authenticated!
-      if username
-        @authenticated ||= db.authenticate(username, password)
-      end
-    end
 
     def bson_id(uid)
       BSON::ObjectId.from_string(uid)
     end
 
     def extract_meta(grid_io)
-      meta = grid_io.metadata
+      meta = grid_io.metadata.metadata
       meta = Utils.stringify_keys(marshal_b64_decode(meta)) if meta.is_a?(String) # Deprecated encoded meta
       meta.merge!('stored_at' => grid_io.upload_date)
       meta
