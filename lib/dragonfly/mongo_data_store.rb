@@ -23,7 +23,7 @@ module Dragonfly
 
     def write(content, opts={})
       content.file do |f|
-        grid_file = Mongo::Grid::File.new(f.read, filename: content.name, content_type: content.mime_type, metadata: content.meta)
+        grid_file = Mongo::Grid::File.new(f.read, filename: content.name, metadata: content.meta.merge(content_type: content.mime_type))
         mongo_id = client.database.fs.insert_one(grid_file)
         mongo_id.to_s
       end
@@ -67,7 +67,7 @@ module Dragonfly
     end
 
     def extract_meta(grid_io)
-      meta = grid_io.metadata.metadata
+      meta = grid_io.info.metadata
       meta = Utils.stringify_keys(marshal_b64_decode(meta)) if meta.is_a?(String) # Deprecated encoded meta
       meta.merge!('stored_at' => grid_io.upload_date)
       meta
