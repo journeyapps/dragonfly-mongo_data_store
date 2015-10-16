@@ -50,12 +50,12 @@ describe Dragonfly::MongoDataStore do
   end
 
   describe "content type" do
-    it "should serve straight from mongo with the correct content type (taken from ext)" do
+    it "should be available in the metadata (taken from ext)" do
       content.name = 'text.txt'
       uid = @data_store.write(content)
-      response = @data_store.gridfs.find_one(_id: BSON::ObjectId(uid))
-      response.content_type.should == 'text/plain'
-      response.data.should == content.data
+      data, meta = @data_store.read(BSON::ObjectId(uid));
+      meta[:content_type].should == 'text/plain'
+      data.should == content.data
     end
   end
 
