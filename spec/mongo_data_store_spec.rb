@@ -53,7 +53,7 @@ describe Dragonfly::MongoDataStore do
     it "should serve straight from mongo with the correct content type (taken from ext)" do
       content.name = 'text.txt'
       uid = @data_store.write(content)
-      response = @data_store.gridfs.find_one(_id: BSON::ObjectId(uid))
+      response = @data_store.gridfs.find_one(_id: BSON::ObjectId.from_string(uid))
       response.content_type.should == 'text/plain'
       response.data.should == content.data
     end
