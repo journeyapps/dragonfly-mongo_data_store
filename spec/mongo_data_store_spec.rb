@@ -59,6 +59,26 @@ describe Dragonfly::MongoDataStore do
     end
   end
 
+
+  describe "write and reads" do
+    it "works for content" do
+      content = Dragonfly::Content.new(app, "gollum")
+      uid = @data_store.write(content)
+      stuff, meta = @data_store.read(uid)
+      retrieved_content = Dragonfly::Content.new(app, stuff, meta)
+      retrieved_content.data.should == "gollum"
+    end
+
+    it "works for empty file" do
+      content = Dragonfly::Content.new(app, "")
+      uid = @data_store.write(content)
+      stuff, meta = @data_store.read(uid)
+      retrieved_content = Dragonfly::Content.new(app, stuff, meta)
+      retrieved_content.data.should == ""
+    end
+  end
+
+
   describe "already stored stuff" do
     it "still works" do
       grid_file = Mongo::Grid::File.new("DOOBS", filename: 'pre-existing', metadata: {'some' => 'meta'})
@@ -77,4 +97,3 @@ describe Dragonfly::MongoDataStore do
   end
 
 end
-
