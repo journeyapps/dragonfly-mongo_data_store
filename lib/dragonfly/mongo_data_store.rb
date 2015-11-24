@@ -23,8 +23,17 @@ module Dragonfly
 
     def write(content, opts={})
       content.file do |f|
-        grid_file = Mongo::Grid::File.new(f.read, filename: content.name, content_type: content.mime_type, metadata: content.meta)
-        mongo_id = client.database.fs.insert_one(grid_file)
+        data = f.read
+        grid_file = Mongo::Grid::File.new(data, filename: content.name, content_type: content.mime_type, metadata: content.meta)
+        if data.length == 0
+          # HACK for mongo 2.0 that can't handle empty files.
+          # For this case, no chunks should be created - only the file metadata is saved.
+          # Avoid this hack in Mongo 2.1+
+          client.database.fs.files_collection.insert_one(grid_file.metadata)
+          mongo_id = grid_file.id
+        else
+          mongo_id = client.database.fs.insert_one(grid_file)
+        end
         mongo_id.to_s
       end
     end
@@ -75,4 +84,3 @@ module Dragonfly
 
   end
 end
-
