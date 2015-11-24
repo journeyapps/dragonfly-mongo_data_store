@@ -53,7 +53,7 @@ describe Dragonfly::MongoDataStore do
     it "should be available in the metadata (taken from ext)" do
       content.name = 'text.txt'
       uid = @data_store.write(content)
-      data, meta = @data_store.read(BSON::ObjectId(uid));
+      data, meta = @data_store.read(BSON::ObjectId.from_string(uid));
       meta[:content_type].should == 'text/plain'
       data.should == content.data
     end
