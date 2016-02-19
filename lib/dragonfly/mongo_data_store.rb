@@ -9,13 +9,14 @@ module Dragonfly
     include Serializer
 
     def initialize(opts={})
-      @hosts     = opts[:hosts] || ['localhost:27017']
-      @options   = opts[:options] || {}
-      @database  = opts[:database] || @options[:database] || 'dragonfly'
+      @hosts     = opts[:hosts]
+      @options   = opts[:options]
+      @database  = opts[:database]
       @client    = opts[:client]
     end
 
-    attr_accessor :hosts, :options, :client
+    attr_accessor :client
+    attr_reader :hosts, :options, :database
 
     def write(content, opts={})
       content.file do |f|
@@ -44,9 +45,11 @@ module Dragonfly
 
     def client
       default_options = {
-        database: @database
+        database: 'dragonfly'
       }
-      @client ||= Mongo::Client.new(@hosts, default_options.merge(@options))
+      mongo_options = default_options.merge(@options || {})
+      hosts = @hosts || ['localhost:27017']
+      @client ||= Mongo::Client.new(hosts, mongo_options)
     end
 
     def gridfs
