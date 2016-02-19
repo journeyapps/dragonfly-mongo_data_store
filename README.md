@@ -27,20 +27,13 @@ end
 Or with options:
 
 ```ruby
-datastore :mongo, host: 'my.host', database: 'my_database'
+datastore :mongo, hosts: ['my.host:27017'], options: {database: 'my_database'}
 ```
 
 ### Available options
 
 ```ruby
-:host              # e.g. 'my.domain'
-:hosts             # for replica sets, e.g. ['n1.mydb.net:27017', 'n2.mydb.net:27017']
-:connection_opts   # hash that passes through to Mongo::Connection or Mongo::ReplSetConnection
-:port              # e.g. 27017
-:database          # defaults to 'dragonfly'
-:username
-:password
-:connection        # use this if you already have a Mongo::Connection object
-:db                # use this if you already have a Mongo::DB object
+:hosts      # A list of host+ports (eg. ['n1.mydb.net:27017', 'n2.mydb.net:27017']) or a mongo connection string (eg. 'mongodb://127.0.0.1:27017/mydb?replicaSet=myapp')
+:options    # Mongo::Client options. see https://docs.mongodb.org/ecosystem/tutorial/ruby-driver-tutorial/#client-options
 ```
 
