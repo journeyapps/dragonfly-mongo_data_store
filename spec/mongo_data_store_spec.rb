@@ -27,15 +27,6 @@ describe Dragonfly::MongoDataStore do
 
   it_should_behave_like 'data_store'
 
-  describe "connecting to a replica set" do
-    it "should initiate a replica set connection if hosts is set" do
-      @data_store.hosts = ['1.2.3.4:27017', '1.2.3.4:27017']
-      @data_store.options = {:replica_set => 'testingset'}
-      Mongo::Client.should_receive(:new).with(['1.2.3.4:27017', '1.2.3.4:27017'], database: 'dragonfly_test', replica_set: 'testingset')
-      @data_store.client
-    end
-  end
-
   describe "sharing already configured stuff" do
     before(:each) do
       @client = Mongo::Client.new(['localhost:27017'], database: 'dragonfly_test_yo')
