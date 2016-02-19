@@ -19,6 +19,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "dragonfly", "~> 1.0"
-  spec.add_runtime_dependency "mongo", "~> 2.1"
+  spec.add_runtime_dependency "mongo", "~> 2.2"
   spec.add_development_dependency "rspec", "~> 2.0"
 end
